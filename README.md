@@ -47,7 +47,7 @@ The API will be available at `http://localhost:5000`
 ### 2. Start the Streamlit Web Application
 
 ```bash
-streamlit run streamlit_app.py
+streamlit run streamlit_app_fixed.py
 ```
 
 The web interface will be available at `http://localhost:8501`
