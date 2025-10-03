@@ -2,6 +2,7 @@
 Flask API for Credit Card Default Prediction
 """
 
+import streamlit as st
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
