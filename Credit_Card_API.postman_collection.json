@@ -1,0 +1,155 @@
+{
+  "info": {
+    "name": "Credit Card Default Prediction API",
+    "description": "Collection for testing the Credit Card Default Prediction Flask API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        },
+        "description": "Check if the API is running and if the model is loaded"
+      },
+      "response": []
+    },
+    {
+      "name": "Train Model",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/train",
+          "host": ["{{base_url}}"],
+          "path": ["train"]
+        },
+        "description": "Train the machine learning model using the UCI Credit Card dataset"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Features",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/features",
+          "host": ["{{base_url}}"],
+          "path": ["features"]
+        },
+        "description": "Get information about all features used in the model"
+      },
+      "response": []
+    },
+    {
+      "name": "Single Prediction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"LIMIT_BAL\": 20000,\n  \"SEX\": 1,\n  \"EDUCATION\": 1,\n  \"MARRIAGE\": 1,\n  \"AGE\": 30,\n  \"PAY_0\": 0,\n  \"PAY_2\": 0,\n  \"PAY_3\": 0,\n  \"PAY_4\": 0,\n  \"PAY_5\": 0,\n  \"PAY_6\": 0,\n  \"BILL_AMT1\": 1000,\n  \"BILL_AMT2\": 1000,\n  \"BILL_AMT3\": 1000,\n  \"BILL_AMT4\": 1000,\n  \"BILL_AMT5\": 1000,\n  \"BILL_AMT6\": 1000,\n  \"PAY_AMT1\": 1000,\n  \"PAY_AMT2\": 1000,\n  \"PAY_AMT3\": 1000,\n  \"PAY_AMT4\": 1000,\n  \"PAY_AMT5\": 1000,\n  \"PAY_AMT6\": 1000\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/predict",
+          "host": ["{{base_url}}"],
+          "path": ["predict"]
+        },
+        "description": "Make a prediction for a single customer record"
+      },
+      "response": []
+    },
+    {
+      "name": "High Risk Customer Prediction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"LIMIT_BAL\": 50000,\n  \"SEX\": 2,\n  \"EDUCATION\": 3,\n  \"MARRIAGE\": 1,\n  \"AGE\": 45,\n  \"PAY_0\": 2,\n  \"PAY_2\": 2,\n  \"PAY_3\": 2,\n  \"PAY_4\": 2,\n  \"PAY_5\": 2,\n  \"PAY_6\": 2,\n  \"BILL_AMT1\": 50000,\n  \"BILL_AMT2\": 45000,\n  \"BILL_AMT3\": 40000,\n  \"BILL_AMT4\": 35000,\n  \"BILL_AMT5\": 30000,\n  \"BILL_AMT6\": 25000,\n  \"PAY_AMT1\": 0,\n  \"PAY_AMT2\": 0,\n  \"PAY_AMT3\": 0,\n  \"PAY_AMT4\": 0,\n  \"PAY_AMT5\": 0,\n  \"PAY_AMT6\": 0\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/predict",
+          "host": ["{{base_url}}"],
+          "path": ["predict"]
+        },
+        "description": "Predict for a high-risk customer (late payments, high bills, no payments)"
+      },
+      "response": []
+    },
+    {
+      "name": "Low Risk Customer Prediction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"LIMIT_BAL\": 100000,\n  \"SEX\": 1,\n  \"EDUCATION\": 1,\n  \"MARRIAGE\": 2,\n  \"AGE\": 28,\n  \"PAY_0\": -1,\n  \"PAY_2\": -1,\n  \"PAY_3\": -1,\n  \"PAY_4\": -1,\n  \"PAY_5\": -1,\n  \"PAY_6\": -1,\n  \"BILL_AMT1\": 20000,\n  \"BILL_AMT2\": 18000,\n  \"BILL_AMT3\": 16000,\n  \"BILL_AMT4\": 14000,\n  \"BILL_AMT5\": 12000,\n  \"BILL_AMT6\": 10000,\n  \"PAY_AMT1\": 20000,\n  \"PAY_AMT2\": 18000,\n  \"PAY_AMT3\": 16000,\n  \"PAY_AMT4\": 14000,\n  \"PAY_AMT5\": 12000,\n  \"PAY_AMT6\": 10000\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/predict",
+          "host": ["{{base_url}}"],
+          "path": ["predict"]
+        },
+        "description": "Predict for a low-risk customer (paid on time, low bills, good payment history)"
+      },
+      "response": []
+    },
+    {
+      "name": "Batch Prediction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"records\": [\n    {\n      \"LIMIT_BAL\": 20000,\n      \"SEX\": 1,\n      \"EDUCATION\": 1,\n      \"MARRIAGE\": 1,\n      \"AGE\": 30,\n      \"PAY_0\": 0,\n      \"PAY_2\": 0,\n      \"PAY_3\": 0,\n      \"PAY_4\": 0,\n      \"PAY_5\": 0,\n      \"PAY_6\": 0,\n      \"BILL_AMT1\": 1000,\n      \"BILL_AMT2\": 1000,\n      \"BILL_AMT3\": 1000,\n      \"BILL_AMT4\": 1000,\n      \"BILL_AMT5\": 1000,\n      \"BILL_AMT6\": 1000,\n      \"PAY_AMT1\": 1000,\n      \"PAY_AMT2\": 1000,\n      \"PAY_AMT3\": 1000,\n      \"PAY_AMT4\": 1000,\n      \"PAY_AMT5\": 1000,\n      \"PAY_AMT6\": 1000\n    },\n    {\n      \"LIMIT_BAL\": 50000,\n      \"SEX\": 2,\n      \"EDUCATION\": 2,\n      \"MARRIAGE\": 2,\n      \"AGE\": 35,\n      \"PAY_0\": 1,\n      \"PAY_2\": 1,\n      \"PAY_3\": 1,\n      \"PAY_4\": 1,\n      \"PAY_5\": 1,\n      \"PAY_6\": 1,\n      \"BILL_AMT1\": 25000,\n      \"BILL_AMT2\": 25000,\n      \"BILL_AMT3\": 25000,\n      \"BILL_AMT4\": 25000,\n      \"BILL_AMT5\": 25000,\n      \"BILL_AMT6\": 25000,\n      \"PAY_AMT1\": 5000,\n      \"PAY_AMT2\": 5000,\n      \"PAY_AMT3\": 5000,\n      \"PAY_AMT4\": 5000,\n      \"PAY_AMT5\": 5000,\n      \"PAY_AMT6\": 5000\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/batch_predict",
+          "host": ["{{base_url}}"],
+          "path": ["batch_predict"]
+        },
+        "description": "Make predictions for multiple customer records at once"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    }
+  ]
+}
