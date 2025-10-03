@@ -21,7 +21,7 @@ CORS(app)
 model = None
 scaler = None
 feature_columns = None
-
+@st.cache_resource
 def load_model():
     """Load the trained model and scaler"""
     global model, scaler, feature_columns
