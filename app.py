@@ -337,9 +337,9 @@ def batch_predict():
             'message': f'Batch prediction error: {str(e)}'
         }), 500
 
-if __name__ == '__main__':
-    # Try to load existing model on startup
-    load_model()
+# if __name__ == '__main__':
+#     # Try to load existing model on startup
+#     load_model()
     
-    # Run the Flask app
-    app.run(debug=True, host='0.0.0.0', port=5000)
+#     # Run the Flask app
+#     app.run(debug=True, host='0.0.0.0', port=5000)
