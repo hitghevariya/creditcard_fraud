@@ -7,6 +7,8 @@ import requests
 import pandas as pd
 import numpy as np
 import json
+import os
+import pickle
 
 # Page configuration
 st.set_page_config(
@@ -16,32 +18,72 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# API base URL
-API_BASE_URL = "http://localhost:5000/api"
+# API base URL (configurable via secrets or env)
+DEFAULT_API_BASE_URL = st.secrets.get("API_BASE_URL", os.getenv("API_BASE_URL", ""))
 
-def check_api_health():
+def check_api_health(api_base_url: str):
     """Check if the API is running"""
     try:
-        response = requests.get(f"{API_BASE_URL}/health", timeout=5)
+        if not api_base_url:
+            return False, None
+        response = requests.get(f"{api_base_url}/health", timeout=5)
         return response.status_code == 200, response.json() if response.status_code == 200 else None
     except:
         return False, None
 
-def train_model():
+def train_model(api_base_url: str):
     """Train the model via API"""
     try:
-        response = requests.post(f"{API_BASE_URL}/train", timeout=60)
+        if not api_base_url:
+            return False, {"error": "API base URL not set"}
+        response = requests.post(f"{api_base_url}/train", timeout=60)
         return response.status_code == 200, response.json() if response.status_code == 200 else response.json()
     except Exception as e:
         return False, {"error": str(e)}
 
-def predict_single(data):
+def predict_single_api(api_base_url: str, data):
     """Make single prediction via API"""
     try:
-        response = requests.post(f"{API_BASE_URL}/predict", json=data, timeout=10)
+        if not api_base_url:
+            return False, {"error": "API base URL not set"}
+        response = requests.post(f"{api_base_url}/predict", json=data, timeout=10)
         return response.status_code == 200, response.json() if response.status_code == 200 else response.json()
     except Exception as e:
         return False, {"error": str(e)}
+
+@st.cache_resource
+def load_local_model():
+    """Load local model artifact for offline predictions"""
+    model_path = "credit_card_model.pkl"
+    if not os.path.exists(model_path):
+        return None
+    with open(model_path, "rb") as f:
+        model_data = pickle.load(f)
+    # Expecting keys: model, scaler, feature_columns
+    if not all(k in model_data for k in ["model", "scaler", "feature_columns"]):
+        return None
+    return model_data
+
+def predict_single_local(model_data, data):
+    """Predict locally using loaded model data"""
+    try:
+        feature_columns = model_data["feature_columns"]
+        scaler = model_data["scaler"]
+        model = model_data["model"]
+        df = pd.DataFrame([data])
+        missing = set(feature_columns) - set(df.columns)
+        if missing:
+            return False, {"message": f"Missing features: {sorted(list(missing))}"}
+        df = df[feature_columns]
+        X = scaler.transform(df)
+        pred = int(model.predict(X)[0])
+        proba = model.predict_proba(X)[0]
+        return True, {
+            "prediction": pred,
+            "probability": {"no_default": float(proba[0]), "default": float(proba[1])}
+        }
+    except Exception as e:
+        return False, {"message": str(e)}
 
 def main():
     """Main Streamlit application"""
@@ -50,31 +92,48 @@ def main():
     st.title("💳 Credit Card Default Prediction")
     st.markdown("---")
     
-    # Check API health
-    api_healthy, health_data = check_api_health()
-    
-    if not api_healthy:
-        st.error("🚨 API is not running! Please start the Flask API server first.")
-        st.code("python app.py", language="bash")
-        return
-    
     # Sidebar
     with st.sidebar:
         st.header("🔧 Configuration")
-        
-        # Model status
-        if health_data and health_data.get('model_loaded'):
-            st.success("✅ Model Loaded")
+        api_base_url = st.text_input("API Base URL", value=DEFAULT_API_BASE_URL, placeholder="https://your-api-host/api")
+        use_local_fallback = st.toggle("Use local model if API unavailable", value=True)
+        st.caption("Tip: On Streamlit Cloud, leave API empty to use local model.")
+
+    # Check API health (non-blocking)
+    api_healthy, health_data = check_api_health(api_base_url)
+
+    if api_healthy:
+        st.info("API connected")
+    else:
+        if api_base_url:
+            st.warning("API not reachable. The app will use local model if available.")
         else:
-            st.warning("⚠️ Model Not Loaded")
-            if st.button("🚀 Train Model", type="primary"):
-                with st.spinner("Training model..."):
-                    success, result = train_model()
-                    if success:
-                        st.success("✅ Model trained successfully!")
-                        st.rerun()
-                    else:
-                        st.error(f"❌ Training failed: {result.get('message', 'Unknown error')}")
+            st.warning("No API configured. The app will use local model if available.")
+
+    # Load local model if needed
+    local_model_data = None
+    if use_local_fallback and not api_healthy:
+        local_model_data = load_local_model()
+        if local_model_data is None:
+            st.error("Local model not found or invalid. Upload/run training to create `credit_card_model.pkl`.")
+
+    # Sidebar
+    with st.sidebar:
+        # Model status
+        if api_healthy and health_data and health_data.get('model_loaded'):
+            st.success("✅ API Model Loaded")
+        elif local_model_data is not None:
+            st.success("✅ Local Model Loaded")
+        else:
+            st.warning("⚠️ No model loaded")
+        if api_healthy and st.button("🚀 Train Model via API", type="primary"):
+            with st.spinner("Training model..."):
+                success, result = train_model(api_base_url)
+                if success:
+                    st.success("✅ Model trained successfully!")
+                    st.rerun()
+                else:
+                    st.error(f"❌ Training failed: {result.get('message', 'Unknown error')}")
     
     # Main content
     st.header("Single Credit Card Default Prediction")
@@ -165,7 +224,12 @@ def main():
             
             # Make prediction
             with st.spinner("Making prediction..."):
-                success, result = predict_single(input_data)
+                if api_healthy:
+                    success, result = predict_single_api(api_base_url, input_data)
+                elif local_model_data is not None:
+                    success, result = predict_single_local(local_model_data, input_data)
+                else:
+                    success, result = False, {"message": "No prediction backend available"}
                 
                 if success:
                     st.success("✅ Prediction completed!")
@@ -200,16 +264,16 @@ def main():
     st.header("🧪 API Testing")
     
     if st.button("Test API Health"):
-        success, result = check_api_health()
+        success, result = check_api_health(api_base_url)
         if success:
             st.success("✅ API is healthy!")
             st.json(result)
         else:
             st.error("❌ API is not responding")
     
-    if st.button("Train Model"):
+    if st.button("Train Model via API"):
         with st.spinner("Training model..."):
-            success, result = train_model()
+            success, result = train_model(api_base_url)
             if success:
                 st.success("✅ Model trained successfully!")
             else:
