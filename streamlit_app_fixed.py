@@ -98,6 +98,9 @@ def main():
         api_base_url = st.text_input("API Base URL", value=DEFAULT_API_BASE_URL, placeholder="https://your-api-host/api")
         use_local_fallback = st.toggle("Use local model if API unavailable", value=True)
         st.caption("Tip: On Streamlit Cloud, leave API empty to use local model.")
+        uploaded_model = None
+        if use_local_fallback and not api_base_url:
+            uploaded_model = st.file_uploader("Upload credit_card_model.pkl", type=["pkl"], help="Upload the trained model bundle with keys: model, scaler, feature_columns")
 
     # Check API health (non-blocking)
     api_healthy, health_data = check_api_health(api_base_url)
@@ -113,7 +116,18 @@ def main():
     # Load local model if needed
     local_model_data = None
     if use_local_fallback and not api_healthy:
-        local_model_data = load_local_model()
+        # Prefer uploaded model if provided
+        if uploaded_model is not None:
+            try:
+                model_data = pickle.load(uploaded_model)
+                if all(k in model_data for k in ["model", "scaler", "feature_columns"]):
+                    local_model_data = model_data
+                else:
+                    st.error("Uploaded file is missing required keys: model, scaler, feature_columns")
+            except Exception as e:
+                st.error(f"Failed to read uploaded model: {e}")
+        if local_model_data is None:
+            local_model_data = load_local_model()
         if local_model_data is None:
             st.error("Local model not found or invalid. Upload/run training to create `credit_card_model.pkl`.")
 
